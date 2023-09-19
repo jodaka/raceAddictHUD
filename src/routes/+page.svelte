@@ -4,8 +4,6 @@
 
   import Setup from '$lib/setup/setup.svelte';
   import type { ICSVRecord } from '$lib/types.js';
-  import { setStoredValue } from '$lib/utils.js';
-  import { STORAGE_KEYS } from '$lib/const';
 
   export let data;
 
@@ -13,9 +11,6 @@
   const storedVideo = data.video;
 
   const handleSave = (csv: ICSVRecord[], video: File) => {
-    // save to session storage
-    setStoredValue(STORAGE_KEYS.CSV, csv);
-
     // save to store
     storedCsv.set(csv);
     storedVideo.set(video);
