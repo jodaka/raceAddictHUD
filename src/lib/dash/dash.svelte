@@ -218,7 +218,6 @@
     };
     lastLapTime: number;
   }) => {
-    ctx.clearRect(0, 0, width, height);
     renderSpeed({ ctx, speed, width });
     renderLap({ ctx, lap, width });
     renderTime({
@@ -256,43 +255,101 @@
 
     let canvasDimensions = changeCanvasDimensions();
 
-    const processFrame: VideoFrameRequestCallback = (
-      now: DOMHighResTimeStamp,
-      metadata: VideoFrameCallbackMetadata
-    ) => {
-      const item = closest(metadata.mediaTime, csv as ICSVRecord[]);
+    let animationHandle: any;
+    // const canvas = document.querySelector("canvas");
+    // const ctx = canvas.getContext("2d");
+    // const video = document.querySelector("video");
+    video.addEventListener('loadeddata', handleVideoLoaded, false);
 
-      const speed = Math.floor(item.speed);
-      const raceTime = item.time;
-      const lap = item.lap;
-      const timestamp = item.utcTime;
+    video.addEventListener('play', () => {
+      console.log(111, 'video play hit');
+      processFrame();
+    });
 
-      if (lap !== currentLap) {
-        lastLapTime = raceTime - lastLapTime;
-        currentLap = lap;
-        lapTimestamp = timestamp;
-        setTimeout(() => (lastLapTime = 0), 3000);
+    function handleVideoLoaded() {
+      console.log(222, 'video loadeddata hit');
+      video.cancelVideoFrameCallback(animationHandle);
+      processFrame();
+    }
+
+    function processFrame(now?: DOMHighResTimeStamp, metadata?: VideoFrameCallbackMetadata) {
+      // update the canvas when a video proceeds to next frame
+      canvasContext.clearRect(0, 0, canvasDimensions.width, canvasDimensions.height);
+      canvasContext.drawImage(video, 0, 0, canvasDimensions.width, canvasDimensions.height);
+
+      console.log(111, 'processFrame', now, metadata);
+      if (metadata) {
+        const item = closest(metadata.mediaTime, csv as ICSVRecord[]);
+
+        const speed = Math.floor(item.speed);
+        const raceTime = item.time;
+        const lap = item.lap;
+        const timestamp = item.utcTime;
+
+        if (lap !== currentLap) {
+          lastLapTime = raceTime - lastLapTime;
+          currentLap = lap;
+          lapTimestamp = timestamp;
+          setTimeout(() => (lastLapTime = 0), 3000);
+        }
+
+        renderDataOverlay({
+          ctx: canvasContext,
+          width: canvasDimensions.width,
+          height: canvasDimensions.height,
+          speed,
+          lap,
+          timestamp,
+          raceTime,
+          acceleration: {
+            x: item.accelerationY, // Note X and Y are swapped here
+            y: item.accelerationX, // Note X and Y are swapped here
+            z: item.accelerationZ
+          },
+          lastLapTime
+        });
+        console.log(333, 'hud rendered', canvasDimensions.width, canvasDimensions.height);
       }
+      animationHandle = video.requestVideoFrameCallback(processFrame);
+    }
 
-      renderDataOverlay({
-        ctx: canvasContext,
-        width: canvasDimensions.width,
-        height: canvasDimensions.height,
-        speed,
-        lap,
-        timestamp,
-        raceTime,
-        acceleration: {
-          x: item.accelerationY, // Note X and Y are swapped here
-          y: item.accelerationX, // Note X and Y are swapped here
-          z: item.accelerationZ
-        },
-        lastLapTime
-      });
-      video.requestVideoFrameCallback(processFrame);
-    };
+    // const processFrame: VideoFrameRequestCallback = (
+    //   now: DOMHighResTimeStamp,
+    //   metadata: VideoFrameCallbackMetadata
+    // ) => {
+    //   const item = closest(metadata.mediaTime, csv as ICSVRecord[]);
 
-    video.requestVideoFrameCallback(processFrame);
+    //   const speed = Math.floor(item.speed);
+    //   const raceTime = item.time;
+    //   const lap = item.lap;
+    //   const timestamp = item.utcTime;
+
+    //   if (lap !== currentLap) {
+    //     lastLapTime = raceTime - lastLapTime;
+    //     currentLap = lap;
+    //     lapTimestamp = timestamp;
+    //     setTimeout(() => (lastLapTime = 0), 3000);
+    //   }
+
+    //   renderDataOverlay({
+    //     ctx: canvasContext,
+    //     width: canvasDimensions.width,
+    //     height: canvasDimensions.height,
+    //     speed,
+    //     lap,
+    //     timestamp,
+    //     raceTime,
+    //     acceleration: {
+    //       x: item.accelerationY, // Note X and Y are swapped here
+    //       y: item.accelerationX, // Note X and Y are swapped here
+    //       z: item.accelerationZ
+    //     },
+    //     lastLapTime
+    //   });
+    //   video.requestVideoFrameCallback(processFrame);
+    // };
+
+    // video.requestVideoFrameCallback(processFrame);
   }
 </script>
 
