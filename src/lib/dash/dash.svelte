@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { ICSVRecord } from '$lib/types';
+  import { onMount } from 'svelte';
+  import { debounce } from '$lib/utils';
 
   export let video: HTMLVideoElement;
   export let csv: ICSVRecord[] | null;
@@ -209,15 +211,30 @@
     renderAcceleration({ ctx, width, height, acceleration });
   };
 
+  const changeCanvasDimensions = () => {
+    let canvasDimensions = video.getBoundingClientRect();
+    canvasDiv.width = canvasDimensions.width;
+    canvasDiv.height = canvasDimensions.height;
+    return canvasDimensions;
+  };
+
+  const debouncedSetWindowWidth = debounce(changeCanvasDimensions, 300);
+
+  onMount(() => {
+    window.addEventListener('resize', debouncedSetWindowWidth);
+
+    return () => {
+      window.removeEventListener('resize', debouncedSetWindowWidth);
+    };
+  });
+
   $: if (canvasDiv && video) {
     const canvasContext: CanvasRenderingContext2D = (canvasDiv as HTMLCanvasElement).getContext(
       '2d'
     ) as CanvasRenderingContext2D;
     canvasContext.scale(1, 1);
-    const canvasDimensions = video.getBoundingClientRect();
 
-    canvasDiv.width = canvasDimensions.width;
-    canvasDiv.height = canvasDimensions.height;
+    let canvasDimensions = changeCanvasDimensions();
 
     const processFrame: VideoFrameRequestCallback = (
       now: DOMHighResTimeStamp,
