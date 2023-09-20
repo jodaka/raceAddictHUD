@@ -1,23 +1,12 @@
 <script lang="ts">
-  import { setContext } from 'svelte';
-  import { writable } from 'svelte/store';
   import { page } from '$app/stores';
-  // import('./$types').LayoutData
   import type { LayoutData } from './$types';
 
   export let data: LayoutData;
-
-  console.log(2222, 'data from layout', data);
-  // Create a store and update it when necessary...
-  // const csv = writable();
-  // $: csv.set('this is a test');
-
-  // ...and add it to the context for child components to access
-  // setContext('csv', csv);
 </script>
 
 <svelte:head>
-  <title>{$page.data.title || 'Hello world'}</title>
+  <title>{$page.data.title || 'Race Addict HUD'}</title>
 </svelte:head>
 
 <slot />

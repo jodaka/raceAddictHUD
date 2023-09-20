@@ -1,9 +1,10 @@
 import type { ICSVRecord } from '$lib/types';
 
 export function parseCSV(rawCSV: string): ICSVRecord[] {
-  return rawCSV.split('\n').map((line) => {
+  return rawCSV.split('\n').map((line, index) => {
     const rawValues = line.split(',').map(parseFloat);
     return {
+      index,
       time: rawValues[0],
       utcTime: rawValues[1],
       lap: rawValues[2],
@@ -20,10 +21,36 @@ export function parseCSV(rawCSV: string): ICSVRecord[] {
   });
 }
 
-export function debounce(func: Function, delay: number) {
+export function debounce(func: Function, delay: number): EventListenerOrEventListenerObject {
   let timer: number;
   return function (...args: any[]) {
     clearTimeout(timer);
     timer = setTimeout(() => func(...args), delay);
   };
+}
+
+export function getCSVRecordByNumber(num: number, arr: ICSVRecord[]): ICSVRecord {
+  let mid;
+  let lo = 0;
+  let hi = arr.length - 1;
+  while (hi - lo > 1) {
+    mid = Math.floor((lo + hi) / 2);
+    if (arr[mid].time < num) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  if (num - arr[lo].time <= arr[hi].time - num) {
+    return arr[lo];
+  }
+  return arr[hi];
+}
+
+export function formatTime(timeInMs: number): string {
+  const rounded: string = timeInMs.toFixed(1);
+  const roundedFloat = parseFloat(rounded);
+  const minutes: number = Math.floor(roundedFloat / 60);
+  const seconds: string = String(Math.floor(roundedFloat - minutes * 60));
+  return `${minutes}:${seconds.padStart(2, '0')}.${rounded[rounded.length - 1]}`;
 }

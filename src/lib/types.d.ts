@@ -1,4 +1,5 @@
 export interface ICSVRecord {
+  index: number;
   time: number;
   utcTime: number;
   lap: number;
