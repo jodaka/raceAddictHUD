@@ -54,3 +54,17 @@ export function formatTime(timeInMs: number): string {
   const seconds: string = String(Math.floor(roundedFloat - minutes * 60));
   return `${minutes}:${seconds.padStart(2, '0')}.${rounded[rounded.length - 1]}`;
 }
+
+export function downloadBlob(blob: Blob, name?: string): void {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = `${name || new Date().toISOString()}.webm`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, 100);
+}

@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { ICSVRecord } from '$lib/types';
   import { onMount } from 'svelte';
-  import { debounce, getCSVRecordByNumber } from '$lib/utils';
+  import { debounce, downloadBlob, getCSVRecordByNumber } from '$lib/utils';
   import { renderSpeed } from './speed';
   import { renderLap } from './lap';
   import { renderTime } from './time';
   import { renderAcceleration } from './acceleration';
+  import { startRecording } from './recorder';
 
   export let video: HTMLVideoElement;
   export let csv: ICSVRecord[] | null;
@@ -70,11 +71,38 @@
     };
   });
 
+  let stopRecordingCallback = () => null;
+
+  const handleStopRecording = () => {
+    video.pause();
+    const recordedBlob = stopRecordingCallback();
+    if (recordedBlob !== null) {
+      downloadBlob(recordedBlob);
+    }
+  };
+
   $: if (canvasDiv && video) {
     const canvasContext: CanvasRenderingContext2D = (canvasDiv as HTMLCanvasElement).getContext(
       '2d'
     ) as CanvasRenderingContext2D;
     canvasContext.scale(1, 1);
+
+    const stream = canvasDiv.captureStream(30); // frames per second
+
+    const getAudioStream = () => {
+      let audioCtx = new AudioContext();
+      var dest = audioCtx.createMediaStreamDestination();
+      let aStream = dest.stream;
+      var sourceNode = audioCtx.createMediaElementSource(video);
+      sourceNode.connect(dest);
+      sourceNode.connect(audioCtx.destination);
+      return aStream;
+    };
+
+    const audioStream = getAudioStream();
+    stream.addTrack(audioStream.getAudioTracks()[0]);
+
+    stopRecordingCallback = startRecording(stream);
 
     let canvasDimensions = changeCanvasDimensions();
 
@@ -132,6 +160,8 @@
     bind:this={canvasDiv}
   />
 </div>
+
+<button on:click={handleStopRecording}>Остановить запись</button>
 
 <style>
   .dash {
